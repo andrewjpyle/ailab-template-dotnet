@@ -1,6 +1,6 @@
 # ailab-template-dotnet
 
-[![ci](https://github.com/apyle0710/ailab-template-dotnet/actions/workflows/ci.yml/badge.svg)](https://github.com/apyle0710/ailab-template-dotnet/actions/workflows/ci.yml)
+[![ci](https://github.com/andrewjpyle/ailab-template-dotnet/actions/workflows/ci.yml/badge.svg)](https://github.com/andrewjpyle/ailab-template-dotnet/actions/workflows/ci.yml)
 
 A small, production-shaped template for **AI lab sidecars in C#**: a narrow, stateless HTTP
 service that a host application calls to classify or score something. It ships as a
@@ -14,7 +14,7 @@ same `IScorer` interface and keeps the rest.
 
 ## Use as a template
 
-1. On GitHub, choose **Use this template** (or `gh repo create my-lab --template apyle0710/ailab-template-dotnet`).
+1. On GitHub, choose **Use this template** (or `gh repo create my-lab --template andrewjpyle/ailab-template-dotnet`).
 2. Rename the solution and projects (`AilabTemplate.*`) to your lab's name.
 3. Replace `KeywordScorer` with your implementation of `IScorer`, and replace
    `fixtures/score_eval.jsonl` with a public or synthetic dataset (see [FIXTURES.md](FIXTURES.md)).
