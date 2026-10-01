@@ -4,8 +4,8 @@
 
 A small, production-shaped template for **AI lab sidecars in C#**: a narrow, stateless HTTP
 service that a host application calls to classify or score something. It ships as a
-**Native AOT** binary in a **chiseled, non-root** container (about 24 MB image, about 11 MB RSS
-at idle), with an offline eval gate and a secret-scanning wall that runs both locally and in CI.
+**Native AOT** binary in a **chiseled, non-root** container (a 24 MB image that uses roughly
+10 to 30 MB of memory), with an offline eval gate and a secret-scanning wall that runs both locally and in CI.
 
 The scoring logic here is a deliberately trivial keyword baseline. The point of the template is
 everything around it: the HTTP contract, health probes, auth, config, logging, tests, the eval
@@ -85,7 +85,7 @@ primary metric falls below the threshold (0.80). CI uploads the file as the `eva
 
 | Date | Commit | Model/Provider | Dataset | Metric | Score | Notes |
 |---|---|---|---|---|---|---|
-| 2026-10-01 | 1f7e0c2 | keyword-baseline-v1 / baseline | score_eval.jsonl (n=40) | accuracy | 0.900 | threshold 0.80; misses: syn-036, syn-037, syn-038, syn-039 (negation, sarcasm, no lexicon hit) |
+| 2026-10-01 | 8a19893 | keyword-baseline-v1 / baseline | score_eval.jsonl (n=40) | accuracy | 0.900 | threshold 0.80; misses: syn-036, syn-037, syn-038, syn-039 (negation, sarcasm, no lexicon hit) |
 
 `eval_results.json` contract (`schema_version` 1; extra keys allowed, required keys never renamed):
 
