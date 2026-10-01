@@ -1,0 +1,19 @@
+# Only what the build stage copies is needed; keep the context small and secret-free.
+**/bin/
+**/obj/
+artifacts/
+tests/
+tools/
+fixtures/
+docs/
+.git/
+.github/
+.githooks/
+.vs/
+.vscode/
+.idea/
+**/*.user
+.env
+.env.*
+eval_results.json
+*.md

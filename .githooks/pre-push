@@ -1,0 +1,46 @@
+#!/usr/bin/env bash
+# pre-push: block the push if the outgoing commits contain secrets (gitleaks) or if the repository
+# matches any deny pattern (scripts/denylist_scan.sh). Enable with `make hooks`.
+set -euo pipefail
+
+repo_root="$(git rev-parse --show-toplevel)"
+cd "$repo_root"
+
+if ! command -v gitleaks > /dev/null 2>&1; then
+  echo "pre-push: gitleaks is not installed; refusing to push (fail closed)." >&2
+  echo "pre-push: install it with: brew install gitleaks" >&2
+  exit 1
+fi
+
+zero="0000000000000000000000000000000000000000"
+scanned=0
+
+# stdin: <local ref> <local sha> <remote ref> <remote sha>, one line per ref being pushed.
+while read -r local_ref local_sha _remote_ref remote_sha; do
+  [[ -z "${local_sha:-}" ]] && continue
+  if [[ "$local_sha" == "$zero" ]]; then
+    continue # deleting a remote ref: nothing outgoing to scan
+  fi
+
+  if [[ "$remote_sha" == "$zero" ]]; then
+    range="$local_sha" # new branch on the remote: scan every commit reachable from it
+  else
+    range="$remote_sha..$local_sha"
+  fi
+
+  echo "pre-push: gitleaks scanning $local_ref ($range)"
+  if ! gitleaks git --log-opts "$range" --redact --no-banner --config .gitleaks.toml; then
+    echo "pre-push: gitleaks found secrets in $local_ref; push blocked." >&2
+    exit 1
+  fi
+  scanned=$((scanned + 1))
+done
+
+if [[ $scanned -eq 0 ]]; then
+  exit 0
+fi
+
+if ! scripts/denylist_scan.sh; then
+  echo "pre-push: denylist scan failed; push blocked." >&2
+  exit 1
+fi

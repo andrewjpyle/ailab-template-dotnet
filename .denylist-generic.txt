@@ -1,0 +1,13 @@
+# Generic deny patterns: one POSIX extended regex per line, matched case-insensitively.
+# Committed on purpose: these describe *shapes* of private data, not the data itself.
+# Instance-specific patterns (real hostnames, names, domains) must NEVER be committed;
+# they belong in the private denylist (AILAB_DENYLIST or ~/.config/ailab/denylist.txt).
+#
+# Tailscale MagicDNS hostnames
+\.ts\.net\b
+# Carrier-grade NAT range 100.64.0.0/10 (Tailscale tailnet addresses)
+\b100\.(6[4-9]|[7-9][0-9]|1[01][0-9]|12[0-7])\.[0-9]{1,3}\.[0-9]{1,3}\b
+# Doppler token prefixes (gitleaks catches full tokens; this catches truncated pastes)
+dp\.(st|ct|pt|sa)\.
+# Doppler token assignment in shell/env files
+DOPPLER_TOKEN=

@@ -1,0 +1,52 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{3050D0FD-762B-4F63-844A-EE5076C65E56}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AilabTemplate.Api", "src\AilabTemplate.Api\AilabTemplate.Api.csproj", "{EA0E36B1-43A9-4FFF-B332-F8119F5EDA56}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AilabTemplate.Core", "src\AilabTemplate.Core\AilabTemplate.Core.csproj", "{29DF497B-2374-4256-9433-063179170E19}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{148940CF-3454-4EB3-82F2-0652FA3B4776}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AilabTemplate.Api.Tests", "tests\AilabTemplate.Api.Tests\AilabTemplate.Api.Tests.csproj", "{04A9ABE5-9A1B-4BAC-A62A-E7A76832DF72}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tools", "tools", "{157BFA4C-AFA6-405D-8439-A71AC47F6FF1}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AilabTemplate.Eval", "tools\AilabTemplate.Eval\AilabTemplate.Eval.csproj", "{D5CD1A91-449F-46ED-B996-9372A2E03251}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{EA0E36B1-43A9-4FFF-B332-F8119F5EDA56}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EA0E36B1-43A9-4FFF-B332-F8119F5EDA56}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EA0E36B1-43A9-4FFF-B332-F8119F5EDA56}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EA0E36B1-43A9-4FFF-B332-F8119F5EDA56}.Release|Any CPU.Build.0 = Release|Any CPU
+		{29DF497B-2374-4256-9433-063179170E19}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{29DF497B-2374-4256-9433-063179170E19}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{29DF497B-2374-4256-9433-063179170E19}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{29DF497B-2374-4256-9433-063179170E19}.Release|Any CPU.Build.0 = Release|Any CPU
+		{04A9ABE5-9A1B-4BAC-A62A-E7A76832DF72}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{04A9ABE5-9A1B-4BAC-A62A-E7A76832DF72}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{04A9ABE5-9A1B-4BAC-A62A-E7A76832DF72}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{04A9ABE5-9A1B-4BAC-A62A-E7A76832DF72}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D5CD1A91-449F-46ED-B996-9372A2E03251}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D5CD1A91-449F-46ED-B996-9372A2E03251}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D5CD1A91-449F-46ED-B996-9372A2E03251}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D5CD1A91-449F-46ED-B996-9372A2E03251}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{EA0E36B1-43A9-4FFF-B332-F8119F5EDA56} = {3050D0FD-762B-4F63-844A-EE5076C65E56}
+		{29DF497B-2374-4256-9433-063179170E19} = {3050D0FD-762B-4F63-844A-EE5076C65E56}
+		{04A9ABE5-9A1B-4BAC-A62A-E7A76832DF72} = {148940CF-3454-4EB3-82F2-0652FA3B4776}
+		{D5CD1A91-449F-46ED-B996-9372A2E03251} = {157BFA4C-AFA6-405D-8439-A71AC47F6FF1}
+	EndGlobalSection
+EndGlobal

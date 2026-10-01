@@ -1,0 +1,18 @@
+# Local run of the production image: `AILAB_API_TOKEN=... docker compose up --build`
+services:
+  api:
+    build: .
+    image: ailab-template-dotnet:local
+    ports:
+      - "8080:8080"
+    environment:
+      # Required: protected endpoints fail closed (503) without it.
+      AILAB_API_TOKEN: ${AILAB_API_TOKEN:?set AILAB_API_TOKEN}
+      AILAB_MAX_TEXT_LENGTH: "4096"
+      AILAB_SHUTDOWN_TIMEOUT_SECONDS: "20"
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    # Longer than AILAB_SHUTDOWN_TIMEOUT_SECONDS so in-flight requests drain before SIGKILL.
+    stop_grace_period: 30s
+    # No healthcheck: the chiseled image has no shell or curl. Probe /healthz and /readyz from outside.

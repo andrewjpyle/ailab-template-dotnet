@@ -1,0 +1,154 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  DOTNET_NOLOGO: "1"
+  DOTNET_CLI_TELEMETRY_OPTOUT: "1"
+  GITLEAKS_VERSION: "8.30.1"
+
+jobs:
+  secret-scan:
+    name: secret-scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install gitleaks (pinned, checksum-verified)
+        run: |
+          set -euo pipefail
+          base="https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}"
+          asset="gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz"
+          sums="gitleaks_${GITLEAKS_VERSION}_checksums.txt"
+          curl -fsSLo "$RUNNER_TEMP/$asset" "$base/$asset"
+          curl -fsSLo "$RUNNER_TEMP/$sums" "$base/$sums"
+          (cd "$RUNNER_TEMP" && grep " ${asset}\$" "$sums" | sha256sum --check --strict -)
+          tar -xzf "$RUNNER_TEMP/$asset" -C "$RUNNER_TEMP" gitleaks
+          sudo install -m 0755 "$RUNNER_TEMP/gitleaks" /usr/local/bin/gitleaks
+          gitleaks version
+
+      - name: gitleaks (full history)
+        run: gitleaks git --redact --no-banner --config .gitleaks.toml
+
+      - name: Denylist scan (tracked files + full history)
+        env:
+          AILAB_DENYLIST: ${{ secrets.AILAB_DENYLIST }}
+          # Fork PRs cannot read secrets; only they may run without the private patterns.
+          AILAB_DENYLIST_OPTIONAL: ${{ github.event.pull_request.head.repo.fork == true && '1' || '' }}
+        run: scripts/denylist_scan.sh
+
+  build-test:
+    name: build-test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+      - run: dotnet restore
+      # IL2026/IL3050 are excluded only here: dotnet format's workspace does not run the Request
+      # Delegate Generator, so it reports false AOT warnings on MapPost. The real build and the AOT
+      # publish still treat those warnings as errors.
+      - name: Format check
+        run: dotnet format --verify-no-changes --no-restore --exclude-diagnostics IL2026 IL3050
+      - run: dotnet build -c Release --no-restore
+      - run: dotnet test -c Release --no-build --logger "console;verbosity=normal"
+
+  eval:
+    name: eval
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+      - name: Run eval gate
+        run: |
+          set -o pipefail
+          dotnet run --project tools/AilabTemplate.Eval -c Release -- \
+            --fixture fixtures/score_eval.jsonl \
+            --out eval_results.json \
+            --threshold 0.80 \
+            --commit "$GITHUB_SHA" | tee eval_row.md
+      - name: Job summary
+        if: always()
+        run: |
+          {
+            echo "## Eval"
+            if [ -f eval_row.md ]; then cat eval_row.md; fi
+          } >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: eval-results
+          path: eval_results.json
+          if-no-files-found: error
+
+  aot-publish:
+    name: aot-publish
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+      - name: Native toolchain
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends clang zlib1g-dev
+      - name: Publish (Native AOT, warnings are errors)
+        run: dotnet publish src/AilabTemplate.Api/AilabTemplate.Api.csproj -c Release -r linux-x64 -o out
+      - name: Assert native binary
+        run: |
+          test -x out/AilabTemplate.Api
+          file out/AilabTemplate.Api
+          ls -lh out/AilabTemplate.Api
+      - name: Smoke test
+        env:
+          AILAB_API_TOKEN: ci-smoke-token
+          PORT: "8080"
+        run: |
+          set -euo pipefail
+          ./out/AilabTemplate.Api > api.log 2>&1 &
+          pid=$!
+          trap 'kill $pid 2>/dev/null || true' EXIT
+          for _ in $(seq 1 50); do curl -fsS localhost:8080/healthz && break; sleep 0.2; done
+          echo
+          curl -fsS localhost:8080/readyz; echo
+          curl -fsS -X POST localhost:8080/v1/score \
+            -H "Authorization: Bearer $AILAB_API_TOKEN" -H 'Content-Type: application/json' \
+            -d '{"text":"fast and reliable"}'; echo
+          code=$(curl -s -o /dev/null -w '%{http_code}' -X POST localhost:8080/v1/score \
+            -H 'Content-Type: application/json' -d '{"text":"x"}')
+          test "$code" = "401"
+
+  docker:
+    name: docker
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build image (no push)
+        run: docker build -t ailab-template-dotnet:ci .
+      - name: Smoke test image
+        run: |
+          set -euo pipefail
+          docker run -d --name api -p 8080:8080 -e AILAB_API_TOKEN=ci-smoke-token --read-only --cap-drop ALL ailab-template-dotnet:ci
+          trap 'docker logs api; docker rm -f api >/dev/null' EXIT
+          for _ in $(seq 1 50); do curl -fsS localhost:8080/healthz && break; sleep 0.2; done
+          echo
+          curl -fsS localhost:8080/readyz; echo
+          user="$(docker inspect -f '{{.Config.User}}' ailab-template-dotnet:ci)"
+          echo "image user: $user"
+          case "$user" in ""|0|root|0:*|root:*) echo "image must run as non-root" >&2; exit 1 ;; esac
+          docker image ls ailab-template-dotnet:ci

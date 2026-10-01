@@ -1,0 +1,40 @@
+{"id":"syn-001","text":"The new dashboard is fast and the layout is clear.","expected":"positive"}
+{"id":"syn-002","text":"Checkout crashed twice and I lost my cart.","expected":"negative"}
+{"id":"syn-003","text":"The quarterly report is attached to this message.","expected":"neutral"}
+{"id":"syn-004","text":"Support resolved my ticket in ten minutes, thanks!","expected":"positive"}
+{"id":"syn-005","text":"Delivery was late and the box was missing a part.","expected":"negative"}
+{"id":"syn-006","text":"Please update the shipping address on order 1042.","expected":"neutral"}
+{"id":"syn-007","text":"I love how easy the setup wizard is.","expected":"positive"}
+{"id":"syn-008","text":"The search is slow and the filters are confusing.","expected":"negative"}
+{"id":"syn-009","text":"Our office will be closed on the public holiday.","expected":"neutral"}
+{"id":"syn-010","text":"Excellent documentation, very helpful examples.","expected":"positive"}
+{"id":"syn-011","text":"Worst onboarding experience I have had this year.","expected":"negative"}
+{"id":"syn-012","text":"The meeting has moved to Thursday at noon.","expected":"neutral"}
+{"id":"syn-013","text":"Reliable product, I would recommend it to a friend.","expected":"positive"}
+{"id":"syn-014","text":"The export button is broken and throws an error.","expected":"negative"}
+{"id":"syn-015","text":"Invoices are generated on the first day of each month.","expected":"neutral"}
+{"id":"syn-016","text":"Smooth upgrade, everything just works.","expected":"positive"}
+{"id":"syn-017","text":"I want a refund, the app is useless on my tablet.","expected":"negative"}
+{"id":"syn-018","text":"The form asks for a name, an email and a phone number.","expected":"neutral"}
+{"id":"syn-019","text":"Friendly staff and a quick response every time.","expected":"positive"}
+{"id":"syn-020","text":"Login fails every morning, which is frustrating.","expected":"negative"}
+{"id":"syn-021","text":"The library opens at nine and closes at six.","expected":"neutral"}
+{"id":"syn-022","text":"Amazing value, I am delighted with the purchase.","expected":"positive"}
+{"id":"syn-023","text":"Terrible battery life and poor build quality.","expected":"negative"}
+{"id":"syn-024","text":"The parcel weighs two kilograms.","expected":"neutral"}
+{"id":"syn-025","text":"The bug I reported last week is fixed, great work.","expected":"positive"}
+{"id":"syn-026","text":"Disappointed that the sync is so unreliable.","expected":"negative"}
+{"id":"syn-027","text":"Version 2 adds a dark theme and a CSV import.","expected":"neutral"}
+{"id":"syn-028","text":"Intuitive interface and solid performance.","expected":"positive"}
+{"id":"syn-029","text":"Awful experience, the page crashes on every click.","expected":"negative"}
+{"id":"syn-030","text":"The training session lasts about forty minutes.","expected":"neutral"}
+{"id":"syn-031","text":"Happy with the result, the team was very helpful.","expected":"positive"}
+{"id":"syn-032","text":"The app is buggy and support never replied.","expected":"negative"}
+{"id":"syn-033","text":"Registration closes on the last Friday of the month.","expected":"neutral"}
+{"id":"syn-034","text":"Pleased with the speed, the report loads fast now.","expected":"positive"}
+{"id":"syn-035","text":"I hate that my settings are lost after each update.","expected":"negative"}
+{"id":"syn-036","text":"The not so good part is the price.","expected":"negative"}
+{"id":"syn-037","text":"Oh great, another outage during the demo.","expected":"negative"}
+{"id":"syn-038","text":"It is not bad at all, honestly.","expected":"positive"}
+{"id":"syn-039","text":"Nothing went wrong this time and nobody complained.","expected":"positive"}
+{"id":"syn-040","text":"The interface is clean but the sync errors are a pain.","expected":"negative"}

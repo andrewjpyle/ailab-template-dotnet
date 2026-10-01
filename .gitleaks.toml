@@ -1,0 +1,13 @@
+# gitleaks configuration: the upstream default ruleset plus project-specific rules.
+# Used by both .githooks/pre-push and the `secret-scan` CI job, so local and CI agree.
+title = "ailab gitleaks config"
+
+[extend]
+useDefault = true
+
+[[rules]]
+id = "doppler-token-any"
+description = "Doppler token (service, CLI, personal, service-account, SCIM or audit)"
+regex = '''dp\.(st|ct|pt|sa|scim|audit)\.[A-Za-z0-9_-]{20,}'''
+keywords = ["dp."]
+tags = ["secret", "doppler"]

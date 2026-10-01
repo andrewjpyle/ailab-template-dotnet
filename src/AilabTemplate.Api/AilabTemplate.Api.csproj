@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <PublishAot>true</PublishAot>
+    <IsAotCompatible>true</IsAotCompatible>
+    <!-- Smaller native binary: no stack-trace text resources, size-optimised codegen. -->
+    <OptimizationPreference>Size</OptimizationPreference>
+    <StackTraceSupport>true</StackTraceSupport>
+    <UseSystemResourceKeys>true</UseSystemResourceKeys>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\AilabTemplate.Core\AilabTemplate.Core.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="AilabTemplate.Api.Tests" />
+  </ItemGroup>
+
+</Project>
