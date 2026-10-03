@@ -1,33 +1,44 @@
-# ailab-template-dotnet
+<p align="center">
+  <img src="docs/assets/hero.webp" alt="An AI lab sidecar shaped to ship: a narrow C# scoring service with auth, health, an eval gate, CI and a container around a trivial scorer" width="100%">
+</p>
 
-[![ci](https://github.com/andrewjpyle/ailab-template-dotnet/actions/workflows/ci.yml/badge.svg)](https://github.com/andrewjpyle/ailab-template-dotnet/actions/workflows/ci.yml)
+<p align="center">
+  <a href="https://github.com/andrewjpyle/ailab-template-dotnet/actions/workflows/ci.yml"><img alt="ci" src="https://github.com/andrewjpyle/ailab-template-dotnet/actions/workflows/ci.yml/badge.svg"></a>
+  <img alt="dotnet" src="https://img.shields.io/badge/.NET-9-E8912D">
+  <img alt="native aot" src="https://img.shields.io/badge/native-AOT-E8912D">
+  <img alt="license" src="https://img.shields.io/badge/license-Apache--2.0-E8912D">
+</p>
 
-A small, production-shaped template for **AI lab sidecars in C#**: a narrow, stateless HTTP
-service that a host application calls to classify or score something. It ships as a
-**Native AOT** binary in a **chiseled, non-root** container (a 24 MB image that uses roughly
-10 to 30 MB of memory), with an offline eval gate and a secret-scanning wall that runs both locally and in CI.
+# A production-shaped template for AI lab sidecars in C#
 
-The scoring logic here is a deliberately trivial keyword baseline. The point of the template is
-everything around it: the HTTP contract, health probes, auth, config, logging, tests, the eval
-regression gate, and the build and supply-chain hygiene. A real lab swaps in a model behind the
-same `IScorer` interface and keeps the rest.
+Most "AI service" starters give you a model wrapper and leave the hard half to you: the HTTP
+contract, the auth, the health probes, the config, the eval gate, the container, and the secret
+hygiene. This template is the hard half. The scoring logic is a deliberately trivial keyword
+baseline. The point is everything around it, and a real lab swaps in a model behind the same
+`IScorer` interface and keeps the rest.
 
-## Use as a template
+- **A narrow HTTP contract.** `POST /v1/score` behind a bearer gate, `/healthz` and `/readyz`
+  probes, and one uniform error envelope for every non-2xx the service writes.
+- **Native AOT in a chiseled, non-root container.** No shared .NET runtime at run time; the image
+  drops every Linux capability and mounts read-only.
+- **An offline eval gate.** `make eval` scores a committed fixture and fails the build when
+  accuracy falls below a threshold, so a regression stops a merge.
+- **A two-tool secret wall.** gitleaks plus a denylist scan, over the tree and full history, run in
+  the pre-push hook and again in CI, and the denylist fails closed.
 
-1. On GitHub, choose **Use this template** (or `gh repo create my-lab --template andrewjpyle/ailab-template-dotnet`).
-2. Rename the solution and projects (`AilabTemplate.*`) to your lab's name.
-3. Replace `KeywordScorer` with your implementation of `IScorer`, and replace
-   `fixtures/score_eval.jsonl` with a public or synthetic dataset (see [FIXTURES.md](FIXTURES.md)).
-4. Run `make hooks`, create your private denylist (see [Secret scanning](#secret-scanning)), and
-   add the `AILAB_DENYLIST` repository secret before your first push.
-5. Record your first eval run in the [Eval results](#eval-results) table.
+> **The one idea worth stealing, even if you never run this code:** a sidecar with one caller needs
+> a gate, not an identity system. A single bearer token checked in constant time, that fails closed
+> when it is unset, is the right amount of auth here. "No token configured" returns 503, never open
+> access. Adding OAuth and roles to a one-caller service is cost with no reader.
 
-## Quickstart
+---
+
+## 60 seconds to a scored request
 
 Requires the .NET 9 SDK (pinned by `global.json`), `make`, and optionally Docker and gitleaks.
 
 ```bash
-make test                                   # build (warnings are errors) + 32 unit/integration tests
+make test                                   # build (warnings are errors) + 32 xUnit cases
 make eval                                   # offline eval gate, writes eval_results.json
 export AILAB_API_TOKEN="$(openssl rand -hex 32)"
 make run                                    # http://localhost:8080
@@ -40,6 +51,11 @@ curl -s -X POST localhost:8080/v1/score \
   -d '{"text":"Setup was easy and support was great."}'
 # {"label":"positive","score":1,"matches":["easy","great"],"model":"keyword-baseline-v1"}
 ```
+
+The score is `(positive - negative) / (positive + negative)` over lexicon hits, rounded to four
+places. `"easy"` and `"great"` are both positive hits, so the score is 1.
+
+<p align="center"><img src="docs/assets/anatomy.webp" alt="The HTTP contract: endpoints, the success body, and the uniform error envelope with its codes" width="100%"></p>
 
 Native AOT and container:
 
@@ -60,7 +76,8 @@ their library paths. Xcode Command Line Tools are required for the native linker
 | GET | `/readyz` | none | Readiness: started and not shutting down | `200 Healthy`, `503 Unhealthy` |
 | POST | `/v1/score` | Bearer | Score `{"text": "..."}` | `200`, `400` invalid input, `401` bad/missing token, `503` token not configured |
 
-Errors use one envelope: `{"error": "<code>", "detail": "<message>"}`.
+Errors use one envelope: `{"error": "<code>", "detail": "<message>"}`. The codes are
+`invalid_request` (400), `unauthorized` (401), and `unavailable` (503).
 
 ## Configuration
 
@@ -77,11 +94,67 @@ Environment variables only; there is no `appsettings.json`.
 
 Invalid values stop the process at startup (options are validated on start, not on first use).
 
+## How it works
+
+<p align="center"><img src="docs/assets/architecture.webp" alt="The request path: caller, bearer filter, validate text, scorer, 200 OK, with 401/503 and 400 rejection lanes" width="100%"></p>
+
+A request to `POST /v1/score` takes one of four ways out. The `/v1` group runs a `BearerTokenFilter`
+first: an unset token returns `503 unavailable`, a bad or missing token returns `401 unauthorized`,
+and a valid token lets the request through. The endpoint then validates the body: blank text or text
+over `AILAB_MAX_TEXT_LENGTH` returns `400 invalid_request`. Only then does the `KeywordScorer` (an
+`IScorer`) run and return `200` with the label, score, matches, and model name. The scorer lives in
+`AilabTemplate.Core` with no ASP.NET dependency, so it stays AOT-compatible and unit-testable on its
+own. The token comparison is constant-time over SHA-256 hashes, so neither the value nor its length
+leaks through timing.
+
+The same `make` targets run locally and in CI, so there is no drift between your machine and the
+pipeline. Each target maps to a named job in `.github/workflows/ci.yml`.
+
+<p align="center"><img src="docs/assets/catalog.webp" alt="The make targets and the CI job each one maps to: build-test, eval, aot-publish, docker, secret-scan" width="100%"></p>
+
+## Scope: what it does not do
+
+- **It is not a model.** The baseline ignores negation and sarcasm on purpose, and the eval fixture
+  includes such rows so the ceiling is visible. Replace `KeywordScorer`, keep the contract.
+- **It is not an identity system.** One shared bearer token, no users, roles, or OAuth. A sidecar
+  with one caller needs a gate.
+- **It is not multi-tenant and holds no state.** No database, no sessions, no request log beyond the
+  JSON lines on stdout.
+- **It does not call out.** No outbound network, no telemetry, no model download at run time.
+
+## The patterns
+
+| Pattern | The failure it prevents |
+|---|---|
+| Fail closed when the token is unset | A missing config silently opening a protected endpoint to everyone |
+| Constant-time token compare over hashes | Leaking the token, or its length, through response timing |
+| `IScorer` seam in a no-ASP.NET core project | A model swap dragging in the web stack and breaking AOT |
+| Eval gate that exits non-zero under threshold | An accuracy regression merging because nothing checked it |
+| Same `make` targets for humans and CI | "Works on my machine" drift between local and the pipeline |
+| Secret wall over full history, failing closed | A rotated secret still sitting in a past commit, or a clean scan that only looked at the tree |
+| Options validated at startup | A bad limit or timeout surfacing as a confusing failure on the first request |
+
+## FAQ
+
+**Why a keyword baseline instead of a real model?** So the HTTP contract, the tests, and the eval
+gate are real from day one and independent of any model choice. You replace one class.
+
+**Why Native AOT?** A small, fast-starting, single-file binary with no shared runtime, which is what
+makes the chiseled non-root image small. The build and publish treat trimming and AOT warnings as
+errors, so the swap-in model has to stay AOT-safe too.
+
+**Why environment variables and no `appsettings.json`?** Twelve-factor config, one source of truth,
+and validation at startup. The defaults live in code underneath every other source, so any variable
+still overrides them.
+
+**Does the eval gate need a network or a key?** No. It runs the scorer over a committed, synthetic
+fixture offline and writes `eval_results.json`. See [FIXTURES.md](FIXTURES.md).
+
 ## Eval results
 
 `make eval` (and the CI `eval` job) runs the scorer over `fixtures/score_eval.jsonl`, writes
-`eval_results.json` (schema below), prints the row to paste here, and exits non-zero if the
-primary metric falls below the threshold (0.80). CI uploads the file as the `eval-results` artifact.
+`eval_results.json`, prints the row to paste here, and exits non-zero if accuracy falls below the
+threshold (0.80). CI uploads the file as the `eval-results` artifact.
 
 | Date | Commit | Model/Provider | Dataset | Metric | Score | Notes |
 |---|---|---|---|---|---|---|
@@ -104,6 +177,16 @@ primary metric falls below the threshold (0.80). CI uploads the file as the `eva
   "generated_at": "2026-10-01T00:00:00Z"
 }
 ```
+
+## Use as a template
+
+1. On GitHub, choose **Use this template** (or `gh repo create my-lab --template andrewjpyle/ailab-template-dotnet`).
+2. Rename the solution and projects (`AilabTemplate.*`) to your lab's name.
+3. Replace `KeywordScorer` with your implementation of `IScorer`, and replace
+   `fixtures/score_eval.jsonl` with a public or synthetic dataset (see [FIXTURES.md](FIXTURES.md)).
+4. Run `make hooks`, create your private denylist (see [Secret scanning](#secret-scanning)), and
+   add the `AILAB_DENYLIST` repository secret before your first push.
+5. Record your first eval run in the [Eval results](#eval-results) table.
 
 ## Secret scanning
 
@@ -148,6 +231,12 @@ docs/LEARNING.md              Concepts used here, plus interview questions
 MODEL_CARD.md                 What the baseline is, and is not, good for
 ```
 
+## Roadmap
+
+- A second `IScorer` example backed by a small ONNX model, to show the AOT-safe swap end to end.
+- An optional OpenAPI document generated at build for the three endpoints.
+- A load-shedding example (concurrency limit returning 503) for the sidecar pattern.
+
 ## License
 
-[Apache-2.0](LICENSE). Copyright 2026 Andrew Pyle.
+[Apache-2.0](LICENSE). Copyright 2026 [Andrew Pyle](https://andrewjpyle.com).
